@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "..\\kuliah\\AyoBerbagi"
+		},
+		{
+			"path": "E:\\C2_Viewer\\replay_data_track"
+		},
+		{
+			"path": "E:\\C2_Viewer\\backend\\shiptrack_native"
+		},
+		{
+			"path": "E:\\C2_Viewer\\cobarest"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "E:\\C2_Viewer\\leaflet\\Leaflet.PolylineDecorator"
+		},
+		{
+			"path": "E:\\C2_Viewer\\admin\\c2_viewer_admin"
+		},
+		{
+			"path": "E:\\C2_Viewer\\frontend\\belajar"
+		}
+	],
+	"settings": {}
+}
