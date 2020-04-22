@@ -7,6 +7,8 @@
         $proses->login();
     } else if($_GET['menu'] == "view_bencana") {
         $proses->view_bencana();
+    } else if($_GET['menu'] == "donasi_terkini") {
+        $proses->donasi_terkini();
     } else if($_GET['menu'] == "add_donasi") {
         $proses->add_donasi();
     } else if($_GET['menu'] == "donasi_barang") {
@@ -221,10 +223,24 @@
             }
         }
 
+        public function donasi_terkini(){
+            $id_bencana = $_POST['id_bencana'];
+            $database = "SELECT id_donasi, anonim, nama_donatur, nominal FROM semua_donasi WHERE konfirmasi = 1 AND id_bencana = $id_bencana ORDER BY 1 DESC";
+            $result = mysqli_query($this->connect, $database);
+
+            $arraydata = array();
+            while ($data = mysqli_fetch_assoc($result)) {
+                $arraydata[] = $data;
+            }
+            header('Content-Type: application/json');
+            echo json_encode($arraydata);
+        }
+
         public function add_donasi(){
             $id_donatur = $_POST['id_donatur'];
             $id_bencana = $_POST['id_bencana'];
             $nominal = $_POST['nominal'];
+            $anonim = $_POST['anonim'];
 
             $database1 = "SELECT * FROM donatur WHERE id_donatur = $id_donatur";
             $result = mysqli_query($this->connect, $database1);
@@ -241,7 +257,8 @@
                     `nominal`,
                     `waktu_donasi`,
                     `bukti`,
-                    `konfirmasi`
+                    `konfirmasi`,
+                    `anonim`
                 ) VALUES (
                     '$id_bencana',
                     '$id_donatur',
@@ -249,7 +266,8 @@
                     '$nominal',
                     now(),
                     null,
-                    '0'
+                    '0',
+                    '$anonim'
                 )";
                 $result = mysqli_query($this->connect, $database) or die (mysqli_error($this->connect));
                 $res = [];
