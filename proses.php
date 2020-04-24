@@ -471,7 +471,7 @@
 
         public function dashboard_relawan(){
             $id_pj = $_POST['id_pj'];
-            $database = "SELECT banyak, format(hitung_total, 0) AS 'hitung_total', format(total_donasi, 0) AS 'total_donasi', format(total_diproses, 0) AS 'total_diproses'  FROM dashboard_pj WHERE id_pj = $id_pj";
+            $database = "SELECT id_bencana, id_pj, nama_bencana, tgl_kejadian, banyak, format(hitung_total, 0) AS 'hitung_total', format(total_donasi, 0) AS 'total_donasi', format(total_diproses, 0) AS 'total_diproses', jumlah_diterima, jumlah_diproses FROM dashboard_pj WHERE id_pj = $id_pj";
             $result = mysqli_query($this->connect, $database);
             $row = mysqli_fetch_assoc($result);
             header('Content-Type: application/json');
