@@ -33,6 +33,8 @@
         $proses->dashboard_relawan();
     } else if($_GET['menu'] == "home_relawan") {
         $proses->home_relawan();
+    } else if($_GET['menu'] == "info_relawan") {
+        $proses->info_relawan();
     } else if($_GET['menu'] == "view_relawan_proses") {
         $proses->view_relawan_proses();
     } else if($_GET['menu'] == "view_relawan_diterima") {
@@ -145,7 +147,7 @@
 
         // VIEW BENCANA
         public function view_bencana(){
-            $database = "SELECT id_bencana, nama_bencana, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
+            $database = "SELECT id_bencana, id_pj, nama_bencana, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
             format(hitung_total(id_bencana), 0), 0) as total_donasi, DATE_FORMAT(deadline, '%d-%m-%Y') AS batas_akhir, if(sisa_hari(deadline) >= 0, sisa_hari(deadline), 0) as deadline
             FROM view_bencana WHERE status = 0 AND sisa_hari(deadline) > 0 ORDER BY 1 DESC";
             $result = mysqli_query($this->connect, $database);
@@ -471,7 +473,7 @@
 
         public function dashboard_relawan(){
             $id_pj = $_POST['id_pj'];
-            $database = "SELECT id_bencana, id_pj, nama_bencana, tgl_kejadian, banyak, format(hitung_total, 0) AS 'hitung_total', format(total_donasi, 0) AS 'total_donasi', format(total_diproses, 0) AS 'total_diproses', jumlah_diterima, jumlah_diproses FROM dashboard_pj WHERE id_pj = $id_pj";
+            $database = "SELECT id_bencana, id_pj, nama_bencana, tgl_kejadian, deadline, banyak, format(hitung_total, 0) AS 'hitung_total', format(total_donasi, 0) AS 'total_donasi', format(total_diproses, 0) AS 'total_diproses', jumlah_diterima, jumlah_diproses FROM dashboard_pj WHERE id_pj = $id_pj";
             $result = mysqli_query($this->connect, $database);
             $row = mysqli_fetch_assoc($result);
             header('Content-Type: application/json');
@@ -481,6 +483,15 @@
         public function home_relawan(){
             $id_pj = $_POST['id_pj'];
             $database = "SELECT id_bencana, id_pj, nama_bencana, tgl_kejadian FROM home_pj WHERE id_pj = $id_pj";
+            $result = mysqli_query($this->connect, $database);
+            $row = mysqli_fetch_assoc($result);
+            header('Content-Type: application/json');
+            echo json_encode($row);
+        }
+
+        public function info_relawan(){
+            $id_pj = $_POST['id_pj'];
+            $database = "SELECT * FROM info_relawan WHERE id_pj = $id_pj";
             $result = mysqli_query($this->connect, $database);
             $row = mysqli_fetch_assoc($result);
             header('Content-Type: application/json');
