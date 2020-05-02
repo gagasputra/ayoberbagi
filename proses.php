@@ -17,8 +17,14 @@
         $proses->view_profile();
     } else if($_GET['menu'] == "cek_profile") {
         $proses->cek_profile();
+    } else if($_GET['menu'] == "before_reset_pass") {
+        $proses->before_reset_pass();
+    } else if($_GET['menu'] == "ubah_password") {
+        $proses->ubah_password();
     } else if($_GET['menu'] == "edit_foto_profile") {
         $proses->edit_foto_profile();
+    } else if($_GET['menu'] == "edit_akun") {
+        $proses->edit_akun();
     } else if($_GET['menu'] == "view_laporan") {
         $proses->view_laporan();
     } else if($_GET['menu'] == "detail_laporan") {
@@ -45,6 +51,8 @@
         $proses->terima_donasi();
     } else if($_GET['menu'] == "tolak_donasi") {
         $proses->tolak_donasi();
+    } else if($_GET['menu'] == "view_distribusi") {
+        $proses->view_distribusi();
     }
 
     class Proses{
@@ -123,11 +131,13 @@
             $username   = $_POST['username'];
             $password   = md5($_POST['password']);
             $nama   = $_POST['nama'];
+            $pertanyaan = $_POST['pertanyaan'];
+            $jawaban = md5($_POST['jawaban']);
             $tipedonatur = $_POST['tipedonatur'];
             $email     = $_POST['email'];
             $noktp      = $_POST['no_ktp'];
 
-            $database = "INSERT INTO akun(username, password, akses) VALUES ('$username', '$password', 'user');";
+            $database = "INSERT INTO akun(username, password, secret_q, answer, akses) VALUES ('$username', '$password', '$pertanyaan', '$jawaban', 'user');";
             $query1 = mysqli_query($this->connect, $database);
 
             $data = mysqli_query($this->connect, "SELECT * FROM akun WHERE username = '$username' AND password = '$password'");
@@ -142,6 +152,29 @@
             }
             else {
                 echo mysqli_error($this->connect);
+            }
+        }
+
+        public function before_reset_pass(){
+            $username = $_POST['username'];
+
+            $database = "SELECT username, secret_q, answer FROM akun WHERE username = '$username'";
+            $result = mysqli_query($this->connect, $database);
+            $row = mysqli_fetch_assoc($result);
+            header('Content-Type: application/json');
+            echo json_encode($row);
+        }
+
+        public function ubah_password(){
+            $username = $_POST['username'];
+            $password = md5($_POST['password']);
+
+            $database = "UPDATE akun SET password = '$password' WHERE username = '$username'";
+            $result = mysqli_query($this->connect, $database);
+            if($result){
+                echo "Ubah Password Berhasil.";
+            } else {
+                echo "Ubah Password Gagal.";
             }
         }
 
@@ -220,9 +253,35 @@
                     file_put_contents($ImagePath, base64_decode($ImageData));
                     echo "Edit Profile Berhasil.";
                 } else {
-                    echo "Edit Profile Gagal.".mysqli_error($this->connect);
+                    echo "Edit Profile Gagal.";
                 }
             }
+        }
+
+        public function edit_akun(){
+            $id = $_POST['id'];
+            $username = $_POST['username'];
+            $password = $_POST['password'];
+            $old_password = $_POST['old_password'];
+
+            $database1 = "SELECT * FROM akun WHERE id = $id";
+            $result = mysqli_query($this->connect, $database1);
+            $row = mysqli_fetch_assoc($result);
+            $data_user = [];
+            if($row['password'] == md5($old_password)){
+                $data_user['hasil'] = "berhasil";
+                $password = md5($password);
+                $database = "UPDATE akun SET username = '$username', password = '$password' WHERE id = '$id'";
+                $uname = "SELECT username FROM akun WHERE id = $id";
+                mysqli_query($this->connect, $database);
+                $result_uname = mysqli_query($this->connect, $uname);
+                $row1 = mysqli_fetch_assoc($result_uname);
+                $data_user['uname'] = $row1['username'];
+            } else {
+                $data_user['hasil'] = "gagal";
+            }
+            header('Content-Type: application/json');
+            echo json_encode($data_user);
         }
 
         public function donasi_terkini(){
@@ -550,6 +609,22 @@
                 $res['success'] = "Donasi Gagal Ditolak";
             }
             echo json_encode($res);
+        }
+
+        public function view_distribusi(){
+
+            $id_pj = $_POST['id_pj'];
+            $database = "SELECT id_bencana, id_pj, nama_bencana, status, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
+            format(hitung_total(id_bencana), 0), 0) as total_donasi, DATE_FORMAT(deadline, '%d-%m-%Y') AS batas_akhir, if(sisa_hari(deadline) >= 0, sisa_hari(deadline), 0) as deadline
+            FROM view_bencana WHERE id_pj = $id_pj ORDER BY 1 DESC";
+            $result = mysqli_query($this->connect, $database);
+
+            $arraydata = array();
+            while ($data = mysqli_fetch_assoc($result)) {
+                $arraydata[] = $data;
+            }
+            header('Content-Type: application/json');
+            echo json_encode($arraydata);
         }
 
         
