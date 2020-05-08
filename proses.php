@@ -7,6 +7,8 @@
         $proses->login();
     } else if($_GET['menu'] == "view_bencana") {
         $proses->view_bencana();
+    } else if($_GET['menu'] == "select_bencana") {
+        $proses->select_bencana();
     } else if($_GET['menu'] == "donasi_terkini") {
         $proses->donasi_terkini();
     } else if($_GET['menu'] == "add_donasi") {
@@ -45,6 +47,8 @@
         $proses->view_relawan_proses();
     } else if($_GET['menu'] == "view_relawan_diterima") {
         $proses->view_relawan_diterima();
+    } else if($_GET['menu'] == "view_semua_diterima") {
+        $proses->view_semua_diterima();
     } else if($_GET['menu'] == "upload_bukti") {
         $proses->upload_bukti();
     } else if($_GET['menu'] == "terima_donasi") {
@@ -183,6 +187,21 @@
             $database = "SELECT id_bencana, id_pj, nama_bencana, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
             format(hitung_total(id_bencana), 0), 0) as total_donasi, DATE_FORMAT(deadline, '%d-%m-%Y') AS batas_akhir, if(sisa_hari(deadline) >= 0, sisa_hari(deadline), 0) as deadline
             FROM view_bencana WHERE status = 0 AND sisa_hari(deadline) > 0 ORDER BY 1 DESC";
+            $result = mysqli_query($this->connect, $database);
+
+            $arraydata = array();
+            while ($data = mysqli_fetch_assoc($result)) {
+                $arraydata[] = $data;
+            }
+            header('Content-Type: application/json');
+            echo json_encode($arraydata);
+        }
+
+        public function select_bencana(){
+            $id_bencana = $_POST['id_bencana'];
+            $database = "SELECT id_bencana, id_pj, nama_bencana, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
+            format(hitung_total(id_bencana), 0), 0) as total_donasi, DATE_FORMAT(deadline, '%d-%m-%Y') AS batas_akhir, if(sisa_hari(deadline) >= 0, sisa_hari(deadline), 0) as deadline
+            FROM view_bencana WHERE id_bencana = '$id_bencana'";
             $result = mysqli_query($this->connect, $database);
 
             $arraydata = array();
@@ -583,6 +602,20 @@
             echo json_encode($arraydata);
         }
 
+        public function view_semua_diterima(){
+            $id_bencana = $_POST['id_bencana'];
+            $id_pj = $_POST['id_pj'];
+            $database = "SELECT * FROM semua_donasi WHERE id_pj = $id_pj AND id_bencana = $id_bencana AND konfirmasi = 1  ORDER BY 1 DESC";
+            $result = mysqli_query($this->connect, $database);
+
+            $arraydata = array();
+            while ($data = mysqli_fetch_assoc($result)) {
+                $arraydata[] = $data;
+            }
+            header('Content-Type: application/json');
+            echo json_encode($arraydata);
+        }
+
         public function terima_donasi(){
             $id_donasi = $_POST['id_donasi'];
 
@@ -614,9 +647,10 @@
         public function view_distribusi(){
 
             $id_pj = $_POST['id_pj'];
-            $database = "SELECT id_bencana, id_pj, nama_bencana, status, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
-            format(hitung_total(id_bencana), 0), 0) as total_donasi, DATE_FORMAT(deadline, '%d-%m-%Y') AS batas_akhir, if(sisa_hari(deadline) >= 0, sisa_hari(deadline), 0) as deadline
-            FROM view_bencana WHERE id_pj = $id_pj ORDER BY 1 DESC";
+            $database = "SELECT id_bencana, id_pj, nama_bencana, status, jumlah_donasi, DATE_FORMAT(tgl_kejadian, '%d-%m-%Y') AS tgl_kejadian, lokasi, deskripsi, jumlah_korban, kerugian, gambar1, gambar2, gambar3, nama, if(hitung_total(id_bencana) >= 0, 
+            format(hitung_total(id_bencana), 0), 0) as total_donasi, DATE_FORMAT(deadline, '%d-%m-%Y') AS batas_akhir, if(sisa_hari(deadline) >= 0, sisa_hari(deadline), 0) as deadline, 
+            DATE_FORMAT(tanggal_distribusi, '%d-%m-%Y') AS tanggal_distribusi, DATE_FORMAT(tgl_akhir_distribusi, '%d-%m-%Y') AS tgl_akhir_distribusi, lokasi_distribusi, konfirmasi, laporan
+            FROM view_distribusi WHERE id_pj = $id_pj ORDER BY 1 DESC";
             $result = mysqli_query($this->connect, $database);
 
             $arraydata = array();
