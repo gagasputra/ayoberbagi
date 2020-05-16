@@ -57,6 +57,8 @@
         $proses->tolak_donasi();
     } else if($_GET['menu'] == "view_distribusi") {
         $proses->view_distribusi();
+    } else if($_GET['menu'] == "upload_distribusi") {
+        $proses->upload_distribusi();
     }
 
     class Proses{
@@ -406,6 +408,7 @@
                 $jml_alat_rt = $_POST['jml_alat_rt'];
                 $barang_lain = $_POST['barang_lain'];
                 $jml_lain = $_POST['jml_lain'];
+                $anonim = $_POST['anonim'];
 
                 // $jml_lain = $_POST['jml_lain'];
                 // if(isset($_POST['checked'])){
@@ -418,14 +421,16 @@
                     kategori,
                     waktu_donasi,
                     bukti,
-                    konfirmasi
+                    konfirmasi,
+                    anonim
                 ) VALUES (
                     '$id_bencana',
                     '$id_donatur',
                     'Barang',
                     now(),
                     null,
-                    '0'
+                    '0',
+                    '$anonim'
                 )";
 
                 if (mysqli_query($this->connect, $database)){
@@ -462,7 +467,8 @@
         }
 
         public function view_laporan(){
-            $database = "SELECT id_laporan, id_pj, nama_bencana, format(total_donasi, 0) AS total_donasi, nama,  laporan, gambar1, gambar2, gambar3 FROM view_laporan";
+            $database = "SELECT id_distribusi, id_bencana, id_pj, nama_bencana, tanggal_distribusi, tgl_akhir_distribusi, lokasi_distribusi,
+            format(total_donasi, 0) AS total_donasi, nama, laporan, gambar1, gambar2, gambar3 FROM view_berita WHERE konfirmasi = 1";
             $result = mysqli_query($this->connect, $database);
 
             $arraydata = array();
@@ -661,7 +667,123 @@
             echo json_encode($arraydata);
         }
 
-        
+        public function upload_distribusi(){            
+
+            if($_SERVER['REQUEST_METHOD'] == 'POST'){
+                $DefaultId = 0;
+
+                $id_bencana = $_POST['id_bencana'];
+                
+                $gambar1 = $_POST['image_tag1'];
+                $gambar2 = $_POST['image_tag2'];
+                $gambar3 = $_POST['image_tag3'];
+
+                $number = 1;
+                $number = $id_bencana + $number;
+                $number++;
+                $gambar_baru1 = "$gambar1+$number";
+                $gambar_baru2 = "$gambar2+$number+$number";
+                $gambar_baru3 = "$gambar3+$number+$number+$number";
+                $ImageData1 = $_POST['image_data1'];
+                $ImageData2 = $_POST['image_data2'];
+                $ImageData3 = $_POST['image_data3'];
+
+                $id_pj = $_POST['id_pj'];
+                $nama_bencana = $_POST['nama_bencana'];
+                $total_donasi = $_POST['total_donasi'];
+                $tgl_awal_distribusi = $_POST['tgl_awal_distribusi'];
+                $tgl_akhir_distribusi = $_POST['tgl_akhir_distribusi'];
+                $lokasi_distribusi = $_POST['lokasi_distribusi'];
+                $laporan = $_POST['laporan'];
+               
+                
+                // $foto = $_POST['image_tag'];
+                $ImagePath1 = "image/upload/distribusi/".uniqid().".jpg";
+                $ImagePath2 = "image/upload/distribusi/".uniqid().".jpg";
+                $ImagePath3 = "image/upload/distribusi/".uniqid().".jpg";
+                
+                $foto1 = "ayoberbagi/$ImagePath1";
+                $foto2 = "ayoberbagi/$ImagePath2";
+                $foto3 = "ayoberbagi/$ImagePath3";
+
+                $database_select = "SELECT id_bencana, status FROM bencana WHERE id_bencana = $id_bencana";
+                $result = mysqli_query($this->connect, $database_select);
+                $row = mysqli_fetch_assoc($result);
+                $data_user = [];
+
+                if (mysqli_num_rows($result) != 0) {
+                    if ($row['status'] == '2') {
+                            $data_user['akses'] = "update";
+                            
+                            $database_id = "SELECT id_distribusi, id_bencana FROM distribusi_donasi WHERE id_bencana = $id_bencana";
+                            $result2 = mysqli_query($this->connect, $database_id);
+                            $row2 = mysqli_fetch_assoc($result2);
+                            $data_id = $row2['id_distribusi'];
+
+                            $database = "UPDATE distribusi_donasi SET tanggal_distribusi = '$tgl_awal_distribusi',
+                                tgl_akhir_distribusi = '$tgl_akhir_distribusi',
+                                lokasi_distribusi = '$lokasi_distribusi',
+                                total_donasi = '$total_donasi',
+                                laporan = '$laporan',
+                                gambar1 = '$foto1',
+                                gambar2 = '$foto2',
+                                gambar3 = '$foto3',
+                                status = 0 WHERE id_distribusi = '$data_id'";
+
+                            if(mysqli_query($this->connect, $database)){
+                                file_put_contents($ImagePath1, base64_decode($ImageData1));
+                                file_put_contents($ImagePath2, base64_decode($ImageData2));
+                                file_put_contents($ImagePath3, base64_decode($ImageData3));
+                                echo "Update Bukti Distribusi Berhasil.";
+                            } else {
+                                echo "Update Bukti Distribusi Gagal.".mysqli_error($this->connect);
+                            }
+                        } else {
+                            $data_user['akses'] = "insert";
+
+                            $database1 = "UPDATE bencana SET status = 2 WHERE id_bencana = $id_bencana";
+                            $database = "INSERT INTO `distribusi_donasi`(
+                                `id_bencana`,
+                                `id_pj`,
+                                `nama_bencana`,
+                                `tanggal_distribusi`,
+                                `tgl_akhir_distribusi`,
+                                `lokasi_distribusi`,
+                                `total_donasi`,
+                                `laporan`,
+                                `gambar1`,
+                                `gambar2`,
+                                `gambar3`,
+                                `status`
+                            )
+                            VALUES(
+                                '$id_bencana',
+                                '$id_pj',
+                                '$nama_bencana',
+                                '$tgl_awal_distribusi',
+                                '$tgl_akhir_distribusi',
+                                '$lokasi_distribusi',
+                                '$total_donasi',
+                                '$laporan',
+                                '$foto1',
+                                '$foto2',
+                                '$foto3',
+                                0
+                            )";
+                        
+                            if(mysqli_query($this->connect, $database)){
+                                mysqli_query($this->connect, $database1);
+                                file_put_contents($ImagePath1, base64_decode($ImageData1));
+                                file_put_contents($ImagePath2, base64_decode($ImageData2));
+                                file_put_contents($ImagePath3, base64_decode($ImageData3));
+                                echo "Upload Bukti Distribusi Berhasil.";
+                            } else {
+                                echo "Upload Bukti Distribusi Gagal.".mysqli_error($this->connect);
+                            }
+                        }
+                    }
+                }
+        }
 
 }
 ?>
