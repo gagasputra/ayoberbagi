@@ -15,6 +15,8 @@
         $proses->add_donasi();
     } else if($_GET['menu'] == "donasi_barang") {
         $proses->donasi_barang();
+    } else if($_GET['menu'] == "cek_username") {
+        $proses->cek_username();
     } else if($_GET['menu'] == "view_profile") {
         $proses->view_profile();
     } else if($_GET['menu'] == "cek_profile") {
@@ -25,6 +27,8 @@
         $proses->ubah_password();
     } else if($_GET['menu'] == "edit_foto_profile") {
         $proses->edit_foto_profile();
+    } else if($_GET['menu'] == "edit_profile_relawan") {
+        $proses->edit_profile_relawan();
     } else if($_GET['menu'] == "edit_akun") {
         $proses->edit_akun();
     } else if($_GET['menu'] == "view_laporan") {
@@ -161,6 +165,30 @@
             }
         }
 
+        public function cek_username(){
+            $username   = $_POST['username'];
+            $email     = $_POST['email'];
+            $no_ktp     = $_POST['no_ktp'];
+            $cek_username = "SELECT username FROM akun WHERE username = '$username'";
+            $cek_email = "SELECT email FROM donatur WHERE email = '$email'";
+            $cek_ktp = "SELECT no_ktp FROM donatur WHERE no_ktp = '$no_ktp'";
+            $result_username = mysqli_query($this->connect, $cek_username);
+            $result_email = mysqli_query($this->connect, $cek_email);
+            $result_ktp = mysqli_query($this->connect, $cek_ktp);
+            $data_user = [];
+            if(mysqli_num_rows($result_username) > 0){
+                $data_user['akses'] = "username_sama";
+            } else if (mysqli_num_rows($result_email) > 0){
+                $data_user['akses'] = "email_sama";
+            } else if (mysqli_num_rows($result_ktp) > 0){
+                $data_user['akses'] = "ktp_sama";
+            } else {
+                $data_user['akses'] = "tidak_sama";
+            }
+            header('Content-Type: application/json');
+            echo json_encode($data_user);
+        }
+
         public function before_reset_pass(){
             $username = $_POST['username'];
 
@@ -182,6 +210,14 @@
             } else {
                 echo "Ubah Password Gagal.";
             }
+        }
+
+        public function ubah_kemanan(){
+            $id = $_POST['akun'];
+            $username = $_POST['username'];
+            $secret_q = $_POST['secret_q'];
+            $answer = $_POST['answer'];
+
         }
 
         // VIEW BENCANA
@@ -269,6 +305,47 @@
                 $foto = "ayoberbagi/$ImagePath";
 
                 $database = "UPDATE donatur SET nama = '$nama_donatur', no_ktp = '$no_ktp', email = '$email', telp = '$telp', alamat = '$alamat', foto = '$foto' WHERE id_donatur = '$id_donatur'";
+            
+                if(mysqli_query($this->connect, $database)){
+                    file_put_contents($ImagePath, base64_decode($ImageData));
+                    echo "Edit Profile Berhasil.";
+                } else {
+                    echo "Edit Profile Gagal.";
+                }
+            }
+        }
+
+        public function edit_profile_relawan(){
+            $id_pj = $_POST['id_pj'];
+            $database1 = "SELECT foto FROM pj WHERE id_pj = $id_pj";
+            $result = mysqli_query($this->connect, $database1);
+            $row = mysqli_fetch_assoc($result);
+            $file_db = explode('/',$row['foto']);
+            $filename_db = explode('+',$file_db[3]);
+            $filename_arr = explode('.',$filename_db[1]);
+
+            if($_SERVER['REQUEST_METHOD'] == 'POST'){
+                $DefaultId = 0;
+                
+                $foto = $_POST['image_tag'];
+                $number = 1;
+                $number = $filename_arr[0];
+                $number++;
+                $foto_baru = "$foto+$number";
+                $ImageData = $_POST['image_data'];
+                $nama_relawan = $_POST['nama'];
+                $no_ktp = $_POST['no_ktp'];
+                $email = $_POST['email'];
+                $telp = $_POST['telp'];
+                $alamat = $_POST['alamat'];
+               
+                
+                // $foto = $_POST['image_tag'];
+                $ImagePath = "image/profile/$foto_baru.jpg";
+                
+                $foto = "ayoberbagi/$ImagePath";
+
+                $database = "UPDATE pj SET nama = '$nama_relawan', no_identitas = '$no_ktp', email = '$email', telp = '$telp', alamat = '$alamat', foto = '$foto' WHERE id_pj = '$id_pj'";
             
                 if(mysqli_query($this->connect, $database)){
                     file_put_contents($ImagePath, base64_decode($ImageData));
@@ -387,7 +464,7 @@
                 $DefaultId = 0;
                 $ImageData = $_POST['image_data'];
                 
-                $foto = $_POST['image_tag'];
+                $foto = uniqid();
                 
                 $ImagePath = "image/upload/$foto.jpg";
                 
@@ -467,7 +544,7 @@
         }
 
         public function view_laporan(){
-            $database = "SELECT id_distribusi, id_bencana, id_pj, nama_bencana, tanggal_distribusi, tgl_akhir_distribusi, lokasi_distribusi,
+            $database = "SELECT id_distribusi, id_bencana, id_pj, nama_bencana, tgl_kejadian, tanggal_distribusi, tgl_akhir_distribusi, lokasi_distribusi,
             format(total_donasi, 0) AS total_donasi, nama, laporan, gambar1, gambar2, gambar3 FROM view_berita WHERE konfirmasi = 1";
             $result = mysqli_query($this->connect, $database);
 
@@ -526,7 +603,7 @@
                 $id_donasi = $_POST['id_donasi'];
                 $ImageData = $_POST['image_data'];
                 
-                $bukti = $_POST['image_tag'];
+                $bukti = uniqid();
                 
                 $ImagePath = "image/upload/$bukti.jpg";
                 
@@ -623,17 +700,28 @@
         }
 
         public function terima_donasi(){
-            $id_donasi = $_POST['id_donasi'];
-
-            $database = "UPDATE donasi SET konfirmasi = 1, waktu_diterima = NOW() WHERE id_donasi = $id_donasi";
-            $result = mysqli_query($this->connect, $database) or die (mysqli_error($this->connect));
-            $res = [];
-            if($result){
-                $res['success'] = "Donasi Berhasil Diterima";
+            $username = $_POST['username'];
+            $database1 = "SELECT * FROM akun WHERE username = '$username'";
+            $result1 = mysqli_query($this->connect, $database1);
+            $row1 = mysqli_fetch_assoc($result1);
+            $data_user = [];
+            if($row1['secret_q'] == NULL && $row1['answer'] == NULL){
+                $data_user['akses'] = "update";
+                header('Content-Type: application/json');
+                echo json_encode($data_user);
             } else {
-                $res['success'] = "Donasi Gagal Diterima";
+                
+                $id_donasi = $_POST['id_donasi'];
+                $database = "UPDATE donasi SET konfirmasi = 1, waktu_diterima = NOW() WHERE id_donasi = $id_donasi";
+                $result = mysqli_query($this->connect, $database) or die (mysqli_error($this->connect));
+                $res = [];
+                if($result){
+                    $res['success'] = "Donasi Berhasil Diterima";
+                } else {
+                    $res['success'] = "Donasi Gagal Diterima";
+                }
+                echo json_encode($res);
             }
-            echo json_encode($res);
         }
 
         public function tolak_donasi(){
