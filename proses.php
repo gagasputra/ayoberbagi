@@ -15,8 +15,12 @@
         $proses->add_donasi();
     } else if($_GET['menu'] == "donasi_barang") {
         $proses->donasi_barang();
+    } else if($_GET['menu'] == "dialog_barang") {
+        $proses->dialog_barang();
     } else if($_GET['menu'] == "cek_username") {
         $proses->cek_username();
+    } else if($_GET['menu'] == "ubah_keamanan") {
+        $proses->ubah_keamanan();
     } else if($_GET['menu'] == "view_profile") {
         $proses->view_profile();
     } else if($_GET['menu'] == "cek_profile") {
@@ -212,13 +216,33 @@
             }
         }
 
-        public function ubah_kemanan(){
-            $id = $_POST['akun'];
+        public function ubah_keamanan(){
             $username = $_POST['username'];
             $secret_q = $_POST['secret_q'];
             $answer = $_POST['answer'];
 
-        }
+            // $database1 = "SELECT secret_q, answer FROM akun WHERE username = $username";
+            // $result1 = mysqli_query($this->connect, $database1);
+            // $row = mysqli_fetch_assoc($result1);
+
+            // if($row['secret_q'] == NULL && $row['answer'] == NULL){
+            //     $insert = "INSERT INTO akun (secret_q, answer) VALUES ('$secret_q', '$answer') WHERE username = '$username'";
+            //     $hasil = mysqli_query($this->connect, $insert);
+            //     if($hasil){
+            //         echo "Input Pertanyaan Kemanan Berhasil.";
+            //     } else {
+            //         echo "Input Pertanyaan Kemanan Gagal.";
+            //     }    
+            // } else {
+                $database = "UPDATE akun SET secret_q = '$secret_q', answer = '$answer' WHERE username = '$username'";
+                $result = mysqli_query($this->connect, $database);
+                if($result){
+                    echo "Ubah Pertanyaan Kemanan Berhasil.";
+                } else {
+                    echo "Ubah Pertanyaan Kemanan Gagal.".mysqli_error($this->connect);
+                }
+            }
+        // }
 
         // VIEW BENCANA
         public function view_bencana(){
@@ -338,22 +362,42 @@
                 $email = $_POST['email'];
                 $telp = $_POST['telp'];
                 $alamat = $_POST['alamat'];
-               
+
+                if($foto == NULL){
+                    $database1 = "UPDATE pj SET nama = '$nama_relawan', no_identitas = '$no_ktp', email = '$email', telp = '$telp', alamat = '$alamat' WHERE id_pj = '$id_pj'";
+                
+                    if(mysqli_query($this->connect, $database1)){
+                        echo "Edit Profile Berhasil.";
+                    } else {
+                        echo "Edit Profile Gagal.";
+                    }
+
+                } else {
                 
                 // $foto = $_POST['image_tag'];
-                $ImagePath = "image/profile/$foto_baru.jpg";
-                
-                $foto = "ayoberbagi/$ImagePath";
+                    $ImagePath = "image/profile/$foto_baru.jpg";
+                    
+                    $foto = "ayoberbagi/$ImagePath";
 
-                $database = "UPDATE pj SET nama = '$nama_relawan', no_identitas = '$no_ktp', email = '$email', telp = '$telp', alamat = '$alamat', foto = '$foto' WHERE id_pj = '$id_pj'";
-            
-                if(mysqli_query($this->connect, $database)){
-                    file_put_contents($ImagePath, base64_decode($ImageData));
-                    echo "Edit Profile Berhasil.";
-                } else {
-                    echo "Edit Profile Gagal.";
+                    $database = "UPDATE pj SET nama = '$nama_relawan', no_identitas = '$no_ktp', email = '$email', telp = '$telp', alamat = '$alamat', foto = '$foto' WHERE id_pj = '$id_pj'";
+                
+                    if(mysqli_query($this->connect, $database)){
+                        file_put_contents($ImagePath, base64_decode($ImageData));
+                        echo "Edit Profile Berhasil.";
+                    } else {
+                        echo "Edit Profile Gagal.";
+                    }
                 }
             }
+        }
+
+        public function dialog_barang(){
+            $id_donasi = $_POST['id_donasi'];
+            $database = "SELECT * FROM semua_donasi WHERE id_donasi = $id_donasi";
+            $result = mysqli_query($this->connect, $database);
+            $row = mysqli_fetch_assoc($result);
+            header('Content-Type: application/json');
+            echo json_encode($row);
         }
 
         public function edit_akun(){
@@ -545,7 +589,7 @@
 
         public function view_laporan(){
             $database = "SELECT id_distribusi, id_bencana, id_pj, nama_bencana, tgl_kejadian, tanggal_distribusi, tgl_akhir_distribusi, lokasi_distribusi,
-            format(total_donasi, 0) AS total_donasi, nama, laporan, gambar1, gambar2, gambar3 FROM view_berita WHERE konfirmasi = 1";
+            format(total_donasi, 0) AS total_donasi, nama, laporan, gambar1, gambar2, gambar3 FROM view_berita WHERE konfirmasi = 1 ORDER BY 1 DESC";
             $result = mysqli_query($this->connect, $database);
 
             $arraydata = array();
@@ -710,17 +754,16 @@
                 header('Content-Type: application/json');
                 echo json_encode($data_user);
             } else {
-                
+                $data_user['akses'] = "berhasil";
                 $id_donasi = $_POST['id_donasi'];
                 $database = "UPDATE donasi SET konfirmasi = 1, waktu_diterima = NOW() WHERE id_donasi = $id_donasi";
                 $result = mysqli_query($this->connect, $database) or die (mysqli_error($this->connect));
-                $res = [];
                 if($result){
-                    $res['success'] = "Donasi Berhasil Diterima";
+                    $data_user['berhasil'] = "Donasi Berhasil Diterima";
+                    echo json_encode($data_user);
                 } else {
-                    $res['success'] = "Donasi Gagal Diterima";
+                    $data_user['gagal'] = "Donasi Gagal Diterima";
                 }
-                echo json_encode($res);
             }
         }
 
