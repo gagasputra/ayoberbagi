@@ -5,6 +5,8 @@
         $proses->register();
     } else if($_GET['menu'] == "login") {
         $proses->login();
+    } else if($_GET['menu'] == "register_relawan") {
+        $proses->register_relawan();
     } else if($_GET['menu'] == "view_bencana") {
         $proses->view_bencana();
     } else if($_GET['menu'] == "select_bencana") {
@@ -27,6 +29,8 @@
         $proses->cek_profile();
     } else if($_GET['menu'] == "before_reset_pass") {
         $proses->before_reset_pass();
+    } else if($_GET['menu'] == "input_reset") {
+        $proses->input_reset();
     } else if($_GET['menu'] == "ubah_password") {
         $proses->ubah_password();
     } else if($_GET['menu'] == "edit_foto_profile") {
@@ -203,6 +207,23 @@
             echo json_encode($row);
         }
 
+        public function input_reset(){
+            $username = $_POST['username'];
+            $answer = $_POST['answer'];
+            $hasil = [];
+
+            $database = "SELECT username, secret_q, answer FROM akun WHERE username = '$username'";
+            $result = mysqli_query($this->connect, $database);
+            $row = mysqli_fetch_assoc($result);
+            if($row['answer'] == md5($answer)){
+                $hasil['akses'] = "berhasil";
+            } else {
+                $hasil['akses'] = "gagal";
+            }
+            header('Content-Type: application/json');
+            echo json_encode($hasil);
+        }
+
         public function ubah_password(){
             $username = $_POST['username'];
             $password = md5($_POST['password']);
@@ -219,7 +240,7 @@
         public function ubah_keamanan(){
             $username = $_POST['username'];
             $secret_q = $_POST['secret_q'];
-            $answer = $_POST['answer'];
+            $answer = md5($_POST['answer']);
 
             // $database1 = "SELECT secret_q, answer FROM akun WHERE username = $username";
             // $result1 = mysqli_query($this->connect, $database1);
@@ -618,7 +639,7 @@
             $result = mysqli_query($this->connect, $database);
 
             $arraydata = array();
-            while ($data = mysqli_fetch_array($result)) {
+            while ($data = mysqli_fetch_assoc($result)) {
                 $arraydata[] = $data;
             }
             header('Content-Type: application/json');
@@ -661,6 +682,59 @@
                     echo "Bukti Berhasil Diupload.";
                 } else {
                     echo "Bukti Gagal Diupload.";
+                }
+            }
+        }
+
+        public function register_relawan(){
+            $username = $_POST['username'];
+            $password = md5($_POST['password']);
+            $secret_q = $_POST['pertanyaan'];
+            $answer = $_POST['jawaban'];
+            
+            $nama = $_POST['nama'];
+            $email = $_POST['email'];
+            $no_ktp = $_POST['no_ktp'];
+            $no_telp = $_POST['no_telp'];
+            $bank = $_POST['bank'];
+            $no_rek = $_POST['no_rek'];
+        
+            if($_SERVER['REQUEST_METHOD'] == 'POST')
+                {
+                $DefaultId = 0;
+            
+                $ImageData = $_POST['image_data1'];
+                $ImageData2 = $_POST['image_data2'];
+                
+                $foto_ktp = uniqid();
+                $foto_selfie = uniqid();
+                
+                $ImagePath = "image/profile/ktp+selfie/$foto_ktp.jpg";
+                $ImagePath2 = "image/profile/ktp+selfie/$foto_selfie.jpg";
+                
+                $path_ktp = "ayoberbagi/$ImagePath";
+                $path_selfie = "ayoberbagi/$ImagePath2";
+                
+                // $database = "INSERT INTO imageupload (image_path,image_name) values('$bukti','$upload_path')";
+                $database1 = "INSERT INTO akun(username, password, secret_q, answer, akses) 
+                VALUES ('$username', '$password', '$secret_q', '$answer', 'pj')";
+                $result1 = mysqli_query($this->connect, $database1);
+                
+                $select_id = "SELECT id, username FROM akun WHERE username = '$username' AND password = '$password'";
+                $resultid = mysqli_query($this->connect, $select_id);
+                $rowid = mysqli_fetch_assoc($resultid);
+                $id = $rowid['id'];
+
+                $database2 = "INSERT INTO pj(nama, no_identitas, email, telp, nama_bank, no_rek, foto, foto_ktp, foto_selfie, id) 
+                VALUES ('$nama', '$no_ktp', '$email', '$no_telp', '$bank', '$no_rek', 'ayoberbagi/image/profile/profile+0.jpg' ,'$path_ktp', '$path_selfie', '$id')";
+                $result2 = mysqli_query($this->connect, $database2);
+            
+                if($result2){
+                    file_put_contents($ImagePath,base64_decode($ImageData));
+                    file_put_contents($ImagePath2,base64_decode($ImageData2));
+                    echo "Registrasi Berhasil";
+                } else {
+                    echo "Registrasi Gagal.".mysqli_error($this->connect);
                 }
             }
         }
